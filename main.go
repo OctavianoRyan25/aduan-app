@@ -11,7 +11,6 @@ import (
 )
 
 func main() {
-	// Initialize Echo
 	e := echo.New()
 
 	// Initialize DB
@@ -19,7 +18,6 @@ func main() {
 	// DB_USER := os.Getenv("DB_USER")
 	dsn := "root:@tcp(localhost:3306)/minpro?charset=utf8mb4&parseTime=True&loc=Local"
 
-	// Membuat koneksi ke database
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
@@ -31,7 +29,7 @@ func main() {
 	// Initialize storage
 	storage := storage.NewStorage()
 
-	// Initialize complaint module
+	// Memasangkan module complaint
 	complaintRepo := complaint.NewComplaintRepository(db)
 	complaintUC := complaint.NewComplaintUseCase(complaintRepo)
 	complaintController := complaint.NewComplaintController(complaintUC, storage)
