@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/constants"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
@@ -27,7 +28,7 @@ func GenerateToken(id uint, email string) (string, error) {
 
 // VerifyToken memverifikasi token JWT dari konteks Echo
 func VerifyToken(c echo.Context) (jwt.MapClaims, error) {
-	errResponse := errors.New("authentication failed")
+	errResponse := errors.New(constants.ErrAuthenticationFailed)
 	headerToken := c.Request().Header.Get("Authorization")
 	bearer := strings.HasPrefix(headerToken, "Bearer ")
 

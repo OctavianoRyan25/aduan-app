@@ -3,6 +3,8 @@ package complaint
 import (
 	"errors"
 	"time"
+
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/constants"
 )
 
 type UseCase interface {
@@ -31,12 +33,16 @@ func (uc *complaintUseCase) CreateComplaint(complaint *Complaint) error {
 }
 
 func (uc *complaintUseCase) GetAllComplaint(user_id int) ([]Complaint, error) {
-	return uc.repo.GetAllComplaint(user_id)
+	complaints, err := uc.repo.GetAllComplaint(user_id)
+	if err != nil {
+		return nil, errors.New(constants.ErrNotFound)
+	}
+	return complaints, err
 }
 
 func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, error) {
 	if id == 0 {
-		return nil, errors.New("invalid id")
+		return nil, errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
@@ -45,7 +51,7 @@ func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, error
 	}
 
 	if user_id != complaintdata.UserID {
-		return nil, errors.New("unauthorized")
+		return nil, errors.New(constants.ErrUnauthorized)
 	}
 
 	return uc.repo.GetComplaintByID(id)
@@ -53,7 +59,7 @@ func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, error
 
 func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complaint) error {
 	if id == 0 {
-		return errors.New("invalid id")
+		return errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
@@ -62,11 +68,11 @@ func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complain
 	}
 
 	if complaintdata == nil {
-		return errors.New("complaint not found")
+		return errors.New(constants.ErrNotFound)
 	}
 
 	if user_id != complaintdata.UserID {
-		return errors.New("unauthorized")
+		return errors.New(constants.ErrUnauthorized)
 	}
 
 	complaint.ID = id
@@ -77,7 +83,7 @@ func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complain
 
 func (uc *complaintUseCase) DeleteComplaint(id, user_id int) error {
 	if id == 0 {
-		return errors.New("invalid id")
+		return errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
@@ -86,11 +92,11 @@ func (uc *complaintUseCase) DeleteComplaint(id, user_id int) error {
 	}
 
 	if complaintdata == nil {
-		return errors.New("complaint not found")
+		return errors.New(constants.ErrNotFound)
 	}
 
 	if user_id != complaintdata.UserID {
-		return errors.New("unauthorized")
+		return errors.New(constants.ErrUnauthorized)
 	}
 
 	images, err := uc.repo.GetImagesByComplaintID(id)

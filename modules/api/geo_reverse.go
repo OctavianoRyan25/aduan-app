@@ -2,12 +2,13 @@ package api
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kelvins/geocoder"
 )
 
 func ReverseGeocode(lat, long float64) (string, error) {
-	geocoder.ApiKey = "AIzaSyAv7XRISjUDUCXlcO1L9XTWm3G1UxVfmz8"
+	geocoder.ApiKey = os.Getenv("GEOAPIKEY")
 
 	location := geocoder.Location{
 		Latitude:  lat,
