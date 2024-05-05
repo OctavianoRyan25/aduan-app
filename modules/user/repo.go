@@ -23,7 +23,7 @@ func (r *userRepository) RegisterUser(user *User) error {
 
 func (r *userRepository) LoginUser(user *User) (*User, error) {
 	var u User
-	if err := r.db.Where("email = ? AND password = ?", user.Email, user.Password).First(&u).Error; err != nil {
+	if err := r.db.Where("email = ?", user.Email).First(&u).Error; err != nil {
 		return nil, err
 	}
 	return &u, nil

@@ -3,30 +3,32 @@ package complaint
 import (
 	"time"
 
-	"gorm.io/gorm"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/user"
 )
 
 type Complaint struct {
-	ID         int            `json:"id" gorm:"primaryKey"`
-	Name       string         `json:"name"`
-	Phone      string         `json:"phone"`
-	Body       string         `json:"body"`
-	Category   string         `json:"category"`
-	Images     []Image        `json:"images" gorm:"foreignKey:ComplaintID"`
-	Created_at time.Time      `json:"created_at"`
-	Updated_at time.Time      `json:"updated_at"`
-	Deleted_at gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	ID         int `gorm:"primaryKey"`
+	Name       string
+	Phone      string
+	Body       string
+	Category   string
+	Images     []Image `gorm:"foreignKey:ComplaintID"`
+	StatusID   int
+	Status     Status `gorm:"foreignKey:StatusID"`
+	UserID     int
+	User       user.User `gorm:"foreignKey:UserID"`
+	Location   string
+	Created_at time.Time
+	Updated_at time.Time
 }
 
 type Image struct {
-	ID          int    `json:"id" gorm:"primaryKey"`
-	ComplaintID int    `json:"complaint_id"`
-	Path        string `json:"path"`
+	ID          int `gorm:"primaryKey"`
+	ComplaintID int
+	Path        string
 }
 
-type ComplaintRequest struct {
-	Name     string `json:"name"`
-	Phone    string `json:"phone"`
-	Body     string `json:"body"`
-	Category string `json:"category"`
+type Status struct {
+	ID     int `gorm:"primaryKey"`
+	Status string
 }
