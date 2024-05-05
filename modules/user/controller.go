@@ -1,8 +1,6 @@
 package user
 
 import (
-	"fmt"
-
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/base"
 	"github.com/labstack/echo/v4"
 )
@@ -52,8 +50,9 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 		return ctx.JSON(500, errorResponse)
 	}
 
-	fmt.Printf("Password yang diinputkan: %s\n", user.Password)
-	fmt.Printf("Password dari database: %s\n", resp.Password)
+	// fmt.Printf("Password yang diinputkan: %s\n", user.Password)
+	// fmt.Printf("Password dari database: %s\n", resp.Password)
+
 	comparePass := ComparePass([]byte(resp.Password), []byte(user.Password))
 	if !comparePass {
 		errorResponse := base.ErrorResponse{
