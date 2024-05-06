@@ -8,7 +8,7 @@ import (
 
 func ReverseGeocode(lat, long float64) (string, error) {
 	//geocoder.ApiKey = os.Getenv("GEOAPIKEY")
-	geocoder.ApiKey = "AIzaSyANoObl9btGhU7vrCCQtulscVKckPU7Yyo"
+	geocoder.ApiKey = ""
 
 	location := geocoder.Location{
 		Latitude:  lat,
