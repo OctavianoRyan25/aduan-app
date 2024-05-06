@@ -8,11 +8,11 @@ import (
 )
 
 type UseCase interface {
-	CreateComplaint(*Complaint) error
-	GetAllComplaint(int) ([]Complaint, error)
-	GetComplaintByID(id, user_id int) (*Complaint, error)
-	UpdateComplaint(id, user_id int, complaint *Complaint) error
-	DeleteComplaint(id, user_id int) error
+	CreateComplaint(*Complaint) (int, error)
+	GetAllComplaint(int) ([]Complaint, int, error)
+	GetComplaintByID(id, user_id int) (*Complaint, int, error)
+	UpdateComplaint(id, user_id int, complaint *Complaint) (int, error)
+	DeleteComplaint(id, user_id int) (int, error)
 }
 
 type complaintUseCase struct {
@@ -25,90 +25,100 @@ func NewComplaintUseCase(repo Repository) UseCase {
 	}
 }
 
-func (uc *complaintUseCase) CreateComplaint(complaint *Complaint) error {
+func (uc *complaintUseCase) CreateComplaint(complaint *Complaint) (int, error) {
+	//Validate complaint
+	if complaint.Name == "" {
+		return constants.ErrorCodeFieldRequired, errors.New(constants.ErrFieldRequired)
+	}
+	if complaint.Phone == "" {
+		return constants.ErrorCodeFieldRequired, errors.New(constants.ErrFieldRequired)
+	}
+	if complaint.Body == "" {
+		return constants.ErrorCodeFieldRequired, errors.New(constants.ErrFieldRequired)
+	}
+	if complaint.Category == "" {
+		return constants.ErrorCodeFieldRequired, errors.New(constants.ErrFieldRequired)
+	}
 	complaint.Created_at = time.Now()
 	complaint.Updated_at = time.Now()
 	complaint.StatusID = 1
-	return uc.repo.CreateComplaint(complaint)
+	err := uc.repo.CreateComplaint(complaint)
+	if err != nil {
+		return constants.ErrorCodeBadRequest, err
+	}
+	return 200, nil
 }
 
-func (uc *complaintUseCase) GetAllComplaint(user_id int) ([]Complaint, error) {
+func (uc *complaintUseCase) GetAllComplaint(user_id int) ([]Complaint, int, error) {
 	complaints, err := uc.repo.GetAllComplaint(user_id)
 	if err != nil {
-		return nil, errors.New(constants.ErrNotFound)
+		return nil, constants.ErrCodeNotFound, errors.New(constants.ErrNotFound)
 	}
-	return complaints, err
+	return complaints, 200, err
 }
 
-func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, error) {
+func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, int, error) {
 	if id == 0 {
-		return nil, errors.New(constants.ErrInvalidID)
+		return nil, constants.ErrCodeInvalidID, errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
 	if err != nil {
-		return nil, err
+		return nil, constants.ErrCodeNotFound, err
 	}
 
 	if user_id != complaintdata.UserID {
-		return nil, errors.New(constants.ErrUnauthorized)
+		return nil, constants.ErrCodeUnauthorized, errors.New(constants.ErrUnauthorized)
 	}
 
-	return uc.repo.GetComplaintByID(id)
+	return complaintdata, 200, err
 }
 
-func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complaint) error {
+func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complaint) (int, error) {
 	if id == 0 {
-		return errors.New(constants.ErrInvalidID)
+		return constants.ErrCodeInvalidID, errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
 	if err != nil {
-		return err
-	}
-
-	if complaintdata == nil {
-		return errors.New(constants.ErrNotFound)
+		return constants.ErrCodeNotFound, err
 	}
 
 	if user_id != complaintdata.UserID {
-		return errors.New(constants.ErrUnauthorized)
+		return constants.ErrCodeUnauthorized, errors.New(constants.ErrUnauthorized)
 	}
 
 	complaint.ID = id
 	complaint.UserID = user_id
 	complaint.Updated_at = time.Now()
-	return uc.repo.UpdateComplaint(complaint, id)
+	err = uc.repo.UpdateComplaint(complaint, id)
+	return 200, err
 }
 
-func (uc *complaintUseCase) DeleteComplaint(id, user_id int) error {
+func (uc *complaintUseCase) DeleteComplaint(id, user_id int) (int, error) {
 	if id == 0 {
-		return errors.New(constants.ErrInvalidID)
+		return constants.ErrCodeInvalidID, errors.New(constants.ErrInvalidID)
 	}
 
 	complaintdata, err := uc.repo.GetComplaintByID(id)
 	if err != nil {
-		return err
-	}
-
-	if complaintdata == nil {
-		return errors.New(constants.ErrNotFound)
+		return constants.ErrCodeNotFound, err
 	}
 
 	if user_id != complaintdata.UserID {
-		return errors.New(constants.ErrUnauthorized)
+		return constants.ErrCodeUnauthorized, errors.New(constants.ErrUnauthorized)
 	}
 
 	images, err := uc.repo.GetImagesByComplaintID(id)
 	if err != nil {
-		return err
+		return constants.ErrorCodeBadRequest, err
 	}
 
 	for _, image := range images {
 		if err := uc.repo.DeleteImageID(image.ID); err != nil {
-			return err
+			return constants.ErrorCodeBadRequest, err
 		}
 	}
 
-	return uc.repo.DeleteComplaint(id)
+	return 200, uc.repo.DeleteComplaint(id)
 }

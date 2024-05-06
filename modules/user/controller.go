@@ -1,7 +1,12 @@
 package user
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/base"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/constants"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/helpers"
 	"github.com/labstack/echo/v4"
 )
 
@@ -20,12 +25,13 @@ func (c *UserController) RegisterUser(ctx echo.Context) error {
 	user := new(User)
 	ctx.Bind(user)
 	user.Password = HashPass(user.Password)
-	err := c.useCase.RegisterUser(user)
+	errCode, err := c.useCase.RegisterUser(user)
 	response := MapToComplaintResponse(*user)
 	if err != nil {
 		errorResponse := base.ErrorResponse{
-			Status:  "error",
-			Message: err.Error(),
+			Status:    "error",
+			ErrorCode: errCode,
+			Message:   err.Error(),
 		}
 		return ctx.JSON(500, errorResponse)
 	}
@@ -41,11 +47,12 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 	user := new(User)
 	ctx.Bind(user)
 
-	resp, err := c.useCase.LoginUser(user)
+	resp, errCode, err := c.useCase.LoginUser(user)
 	if err != nil {
 		errorResponse := base.ErrorResponse{
-			Status:  "error",
-			Message: err.Error(),
+			Status:    "error",
+			ErrorCode: errCode,
+			Message:   err.Error(),
 		}
 		return ctx.JSON(500, errorResponse)
 	}
@@ -56,13 +63,14 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 	comparePass := ComparePass([]byte(resp.Password), []byte(user.Password))
 	if !comparePass {
 		errorResponse := base.ErrorResponse{
-			Status:  "error",
-			Message: "Password is incorrect",
+			Status:    "error",
+			ErrorCode: constants.ErrCodeInvalidEmailorPassword,
+			Message:   constants.ErrInvalidEmailorPassword,
 		}
 		return ctx.JSON(500, errorResponse)
 	}
 
-	token, err := GenerateToken(uint(resp.ID), resp.Email)
+	token, err := helpers.GenerateToken(uint(resp.ID), resp.Email, "user")
 	if err != nil {
 		errorResponse := base.ErrorResponse{
 			Status:  "error",
@@ -77,5 +85,36 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 		Data:    token,
 	}
 
+	return ctx.JSON(200, successResponse)
+}
+
+func (c *UserController) InactiveUser(ctx echo.Context) error {
+	// Get user_id from JWT token
+	userID := ctx.Get("user_id").(uint)
+	userIDInt := int(userID)
+
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		errorResponse := base.ErrorResponse{
+			Status:    "error",
+			ErrorCode: constants.ErrCodeFailParseID,
+			Message:   err.Error(),
+		}
+		return ctx.JSON(http.StatusBadRequest, errorResponse)
+	}
+
+	errCode, err := c.useCase.InactiveUser(id, userIDInt)
+	if err != nil {
+		errorResponse := base.ErrorResponse{
+			Status:    "error",
+			ErrorCode: errCode,
+			Message:   err.Error(),
+		}
+		return ctx.JSON(500, errorResponse)
+	}
+	successResponse := base.SuccessResponse{
+		Status:  "success",
+		Message: "User inactive successfully",
+	}
 	return ctx.JSON(200, successResponse)
 }
