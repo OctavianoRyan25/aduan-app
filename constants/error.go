@@ -11,4 +11,8 @@ var (
 	ErrInvalidEmailorPassword = "Invalid email or password"
 	ErrInvalidID              = "Invalid ID"
 	ErrAuthenticationFailed   = "Authentication failed"
+	ErrEmailAlreadyExist      = "Email already exist"
+	ErrBadRequest             = "Bad request"
+	ErrFieldRequired          = "Field is required"
+	ErrUserAlreadyActive      = "User already active"
 )
