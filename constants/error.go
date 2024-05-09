@@ -15,4 +15,6 @@ var (
 	ErrBadRequest             = "Bad request"
 	ErrFieldRequired          = "Field is required"
 	ErrUserAlreadyActive      = "User already active"
+	ErrUserAlreadyDeleted     = "User not found or already deleted"
+	ErrInvalidUserIDToken     = "Invalid user ID in token"
 )

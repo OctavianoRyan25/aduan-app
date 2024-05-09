@@ -6,7 +6,6 @@ import (
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/base"
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/constants"
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/helpers"
-	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/user"
 	"github.com/labstack/echo/v4"
 )
 
@@ -33,14 +32,14 @@ func (c *AdminController) RegisterAdmin(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "User registered successfully",
 		Data:    response,
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) LoginAdmin(ctx echo.Context) error {
@@ -54,7 +53,7 @@ func (c *AdminController) LoginAdmin(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 
 	// fmt.Printf("Password yang diinputkan: %s\n", user.Password)
@@ -67,7 +66,7 @@ func (c *AdminController) LoginAdmin(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeInvalidEmailorPassword,
 			Message:   "Password is incorrect",
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(constants.ErrCodeInvalidEmailorPassword, errorResponse)
 	}
 
 	token, err := helpers.GenerateToken(uint(resp.ID), resp.Email, "admin")
@@ -76,7 +75,7 @@ func (c *AdminController) LoginAdmin(ctx echo.Context) error {
 			Status:  "error",
 			Message: err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 
 	successResponse := base.SuccessResponse{
@@ -85,7 +84,7 @@ func (c *AdminController) LoginAdmin(ctx echo.Context) error {
 		Data:    token,
 	}
 
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) UpdateStatusComplaint(ctx echo.Context) error {
@@ -96,7 +95,7 @@ func (c *AdminController) UpdateStatusComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(400, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 	}
 	statusID := ctx.FormValue("status_id")
 	conv, err := strconv.Atoi(statusID)
@@ -106,7 +105,7 @@ func (c *AdminController) UpdateStatusComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(400, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 
 	}
 	errCode, err := c.useCase.UpdateStatusComplaint(id, conv)
@@ -116,13 +115,13 @@ func (c *AdminController) UpdateStatusComplaint(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Complaint status updated successfully",
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) GetAllComplaint(ctx echo.Context) error {
@@ -133,23 +132,27 @@ func (c *AdminController) GetAllComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	complaints, errCode, err := c.useCase.GetAllComplaint()
+	var complaintResponses []ComplaintResponse
+	for _, complaint := range complaints {
+		complaintResponses = append(complaintResponses, mapToComplaintResponse(complaint))
+	}
 	if err != nil {
 		errorResponse := base.ErrorResponse{
 			Status:    "error",
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Complaints retrieved successfully",
-		Data:    complaints,
+		Data:    complaintResponses,
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) GetAllUser(ctx echo.Context) error {
@@ -160,7 +163,7 @@ func (c *AdminController) GetAllUser(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	users, errCode, err := c.useCase.GetAllUser()
 	if err != nil {
@@ -169,14 +172,14 @@ func (c *AdminController) GetAllUser(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Users retrieved successfully",
 		Data:    users,
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) UpdatePasswordUser(ctx echo.Context) error {
@@ -187,25 +190,26 @@ func (c *AdminController) UpdatePasswordUser(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
-	user := new(user.User)
-	ctx.Bind(user)
-	user.Password = HashPass(user.Password)
-	errCode, err := c.useCase.UpdatePasswordUser(user)
+	id := ctx.Param("id")
+	conv, _ := strconv.Atoi(id)
+	pass := ctx.FormValue("password")
+	hashed := HashPass(pass)
+	errCode, err := c.useCase.UpdatePasswordUser(conv, hashed)
 	if err != nil {
 		errorResponse := base.ErrorResponse{
 			Status:    "error",
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Password updated successfully",
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *AdminController) ActivateUser(ctx echo.Context) error {
@@ -216,7 +220,7 @@ func (c *AdminController) ActivateUser(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -225,11 +229,11 @@ func (c *AdminController) ActivateUser(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(400, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 	}
 	_, err = c.useCase.ActivateUser(id)
 	if err != nil {
-		return ctx.JSON(500, base.ErrorResponse{
+		return ctx.JSON(constants.ErrorCodeBadRequest, base.ErrorResponse{
 			Status:    "error",
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
@@ -239,5 +243,5 @@ func (c *AdminController) ActivateUser(ctx echo.Context) error {
 		Status:  "success",
 		Message: "User Activated",
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }

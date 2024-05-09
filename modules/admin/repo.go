@@ -16,9 +16,10 @@ type Repository interface {
 	UpdateStatusComplaint(id int, status_id int, updated_at time.Time) error
 	GetAllComplaint() ([]complaint.Complaint, error)
 	GetAllUser() ([]user.User, error)
-	UpdatePasswordUser(*user.User) error
+	UpdatePasswordUser(int, string) error
 	ActivateUser(int) error
 	IsActiveUser(int) (bool, error)
+	GetEmailUser(string) (*Admin, error)
 }
 
 type adminRepository struct {
@@ -72,8 +73,16 @@ func (r *adminRepository) GetAllUser() ([]user.User, error) {
 	return users, nil
 }
 
-func (r *adminRepository) UpdatePasswordUser(user *user.User) error {
-	return r.db.Model(&user).Where("id = ?", user.ID).Update("password", user.Password).Error
+func (r *adminRepository) UpdatePasswordUser(id int, pass string) error {
+	var user user.User
+	err := r.db.Model(&user).Where("id = ?", id).Updates(map[string]interface{}{
+		"password":   pass,
+		"updated_at": time.Now(),
+	}).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *adminRepository) ActivateUser(id int) error {
@@ -97,4 +106,12 @@ func (r *adminRepository) IsActiveUser(id int) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (r *adminRepository) GetEmailUser(email string) (*Admin, error) {
+	var a Admin
+	if err := r.db.Where("email = ?", email).First(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
 }

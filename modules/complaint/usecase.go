@@ -46,7 +46,7 @@ func (uc *complaintUseCase) CreateComplaint(complaint *Complaint) (int, error) {
 	if err != nil {
 		return constants.ErrorCodeBadRequest, err
 	}
-	return 200, nil
+	return constants.SuccessCode, nil
 }
 
 func (uc *complaintUseCase) GetAllComplaint(user_id int) ([]Complaint, int, error) {
@@ -54,7 +54,7 @@ func (uc *complaintUseCase) GetAllComplaint(user_id int) ([]Complaint, int, erro
 	if err != nil {
 		return nil, constants.ErrCodeNotFound, errors.New(constants.ErrNotFound)
 	}
-	return complaints, 200, err
+	return complaints, constants.SuccessCode, err
 }
 
 func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, int, error) {
@@ -71,14 +71,16 @@ func (uc *complaintUseCase) GetComplaintByID(id, user_id int) (*Complaint, int, 
 		return nil, constants.ErrCodeUnauthorized, errors.New(constants.ErrUnauthorized)
 	}
 
-	return complaintdata, 200, err
+	return complaintdata, constants.SuccessCode, err
 }
 
 func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complaint) (int, error) {
 	if id == 0 {
 		return constants.ErrCodeInvalidID, errors.New(constants.ErrInvalidID)
 	}
-
+	if complaint.Name == "" || complaint.Phone == "" || complaint.Body == "" || complaint.Category == "" {
+		return constants.ErrorCodeFieldRequired, errors.New(constants.ErrFieldRequired)
+	}
 	complaintdata, err := uc.repo.GetComplaintByID(id)
 	if err != nil {
 		return constants.ErrCodeNotFound, err
@@ -92,7 +94,7 @@ func (uc *complaintUseCase) UpdateComplaint(id, user_id int, complaint *Complain
 	complaint.UserID = user_id
 	complaint.Updated_at = time.Now()
 	err = uc.repo.UpdateComplaint(complaint, id)
-	return 200, err
+	return constants.SuccessCode, err
 }
 
 func (uc *complaintUseCase) DeleteComplaint(id, user_id int) (int, error) {
@@ -120,5 +122,5 @@ func (uc *complaintUseCase) DeleteComplaint(id, user_id int) (int, error) {
 		}
 	}
 
-	return 200, uc.repo.DeleteComplaint(id)
+	return constants.SuccessCode, uc.repo.DeleteComplaint(id)
 }

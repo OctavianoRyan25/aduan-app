@@ -1,17 +1,14 @@
 package complaint
 
 import (
-	"strconv"
-	"time"
-
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/user"
 )
 
-func generateUniqueFilename(ext string) string {
-	// Mengubah nama file menjadi unix
-	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
-	return timestamp + ext
-}
+// func generateUniqueFilename(ext string) string {
+// 	// Mengubah nama file menjadi unix
+// 	timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+// 	return timestamp + ext
+// }
 
 func mapToCreateComplaintResponse(complaint Complaint) CreateComplaintResponse {
 	var imagesResponse []ImageResponse
@@ -47,7 +44,7 @@ func mapToComplaintResponse(complaint Complaint) ComplaintResponse {
 
 	//Mapping User to UserRegisterResponse
 	mappingUser := user.MapToComplaintResponse(complaint.User)
-
+	mappingStatus := mapStatusToResponse(complaint.Status)
 	return ComplaintResponse{
 		ID:         complaint.ID,
 		Name:       complaint.Name,
@@ -56,10 +53,17 @@ func mapToComplaintResponse(complaint Complaint) ComplaintResponse {
 		Category:   complaint.Category,
 		Images:     imagesResponse,
 		StatusID:   complaint.StatusID,
-		Status:     complaint.Status,
+		Status:     mappingStatus,
 		UserID:     complaint.UserID,
 		User:       mappingUser,
 		Location:   complaint.Location,
 		Created_at: complaint.Created_at,
+	}
+}
+
+func mapStatusToResponse(status Status) StatusResponse {
+	return StatusResponse{
+		ID:     status.ID,
+		Status: status.Status,
 	}
 }
