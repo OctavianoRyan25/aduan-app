@@ -2,8 +2,8 @@ package complaint
 
 import (
 	"net/http"
-	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/base"
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/constants"
@@ -36,7 +36,7 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	// Get form value
 	name := ctx.FormValue("name")
@@ -53,7 +53,7 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 	long, err := strconv.ParseFloat(longitude, 64)
 	if err != nil {
@@ -62,17 +62,17 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 	// Reverse geocoding
 	location, err := api.ReverseGeocode(lat, long)
 	if err != nil {
 		errorResponse := base.ErrorResponse{
-			Status: "error",
-			// ErrorCode: constants.ErrorCodeBadRequest,
-			Message: err.Error(),
+			Status:    "error",
+			ErrorCode: constants.ErrCodeInternalServer,
+			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrCodeInternalServer, errorResponse)
 
 	}
 	// Parse multipart form for images
@@ -83,7 +83,7 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 
 	files := form.File["images"]
@@ -91,8 +91,9 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 
 	// Save images
 	for _, img := range files {
-		ext := filepath.Ext(img.Filename)
-		imagePath := "public/" + generateUniqueFilename(ext)
+		//ext := filepath.Ext(img.Filename)
+		timestamp := strconv.FormatInt(time.Now().UnixNano(), 10)
+		imagePath := "public/" + timestamp
 
 		// Open the uploaded file
 		file, err := img.Open()
@@ -102,22 +103,32 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 				ErrorCode: constants.ErrorCodeBadRequest,
 				Message:   err.Error(),
 			}
-			return ctx.JSON(http.StatusInternalServerError, errorResponse)
+			return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 		}
 		defer file.Close()
 
 		// Save image data to storage
-		if err := c.storage.SaveImage(imagePath, file); err != nil {
+		// if err := c.storage.SaveImage(imagePath, file); err != nil {
+		// 	errorResponse := base.ErrorResponse{
+		// 		Status:    "error",
+		// 		ErrorCode: constants.ErrorCodeBadRequest,
+		// 		Message:   err.Error(),
+		// 	}
+		// 	return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
+		// }
+
+		imageURL, err := api.UploadToCloudinary(file, imagePath)
+		if err != nil {
 			errorResponse := base.ErrorResponse{
 				Status:    "error",
 				ErrorCode: constants.ErrorCodeBadRequest,
 				Message:   err.Error(),
 			}
-			return ctx.JSON(http.StatusInternalServerError, errorResponse)
+			return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 		}
 
 		// Append image path to the list
-		imagePaths = append(imagePaths, imagePath)
+		imagePaths = append(imagePaths, imageURL)
 	}
 
 	// Create Complaint struct
@@ -170,7 +181,7 @@ func (c *ComplaintController) GetAllComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	complaints, errCode, err := c.UseCase.GetAllComplaint(userIDInt)
 	if err != nil {
@@ -179,7 +190,7 @@ func (c *ComplaintController) GetAllComplaint(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	var complaintResponses []ComplaintResponse
 	for _, complaint := range complaints {
@@ -191,7 +202,7 @@ func (c *ComplaintController) GetAllComplaint(ctx echo.Context) error {
 		Message: "Success get complaint",
 		Data:    complaintResponses,
 	}
-	return ctx.JSON(http.StatusOK, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *ComplaintController) GetComplaintByID(ctx echo.Context) error {
@@ -206,7 +217,7 @@ func (c *ComplaintController) GetComplaintByID(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -215,7 +226,7 @@ func (c *ComplaintController) GetComplaintByID(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusBadRequest, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 	}
 	complaint, errCode, err := c.UseCase.GetComplaintByID(id, userIDInt)
 	if err != nil {
@@ -224,7 +235,7 @@ func (c *ComplaintController) GetComplaintByID(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 
 	complaintResponse := mapToComplaintResponse(*complaint)
@@ -234,7 +245,7 @@ func (c *ComplaintController) GetComplaintByID(ctx echo.Context) error {
 		Message: "Success get complaint by id",
 		Data:    complaintResponse,
 	}
-	return ctx.JSON(http.StatusOK, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
@@ -249,7 +260,7 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -258,7 +269,7 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusBadRequest, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 	}
 
 	// Get form value
@@ -276,7 +287,7 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 	long, err := strconv.ParseFloat(longitude, 64)
 	if err != nil {
@@ -285,7 +296,7 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 	// Reverse geocoding
 	location, err := api.ReverseGeocode(lat, long)
@@ -295,7 +306,7 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrorCodeBadRequest,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(constants.ErrorCodeBadRequest, errorResponse)
 	}
 
 	//complaint := new(Complaint)
@@ -324,13 +335,13 @@ func (c *ComplaintController) UpdateComplaint(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Complaint updated successfully",
 	}
-	return ctx.JSON(http.StatusOK, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *ComplaintController) DeleteComplaint(ctx echo.Context) error {
@@ -345,7 +356,7 @@ func (c *ComplaintController) DeleteComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeUnauthorized,
 			Message:   constants.ErrUnauthorized,
 		}
-		return ctx.JSON(401, errorResponse)
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -354,7 +365,7 @@ func (c *ComplaintController) DeleteComplaint(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeFailParseID,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusBadRequest, errorResponse)
+		return ctx.JSON(constants.ErrCodeFailParseID, errorResponse)
 	}
 
 	errCode, err := c.UseCase.DeleteComplaint(id, userIDInt)
@@ -364,11 +375,11 @@ func (c *ComplaintController) DeleteComplaint(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(http.StatusInternalServerError, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Complaint deleted successfully",
 	}
-	return ctx.JSON(http.StatusOK, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }

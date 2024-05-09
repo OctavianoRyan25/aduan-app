@@ -14,4 +14,5 @@ var (
 	ErrCodeEmailAlreadyExist      = 409
 	ErrorCodeBadRequest           = 400
 	ErrorCodeFieldRequired        = 400
+	ErrCodeInvalidUserIDToken     = 401
 )
