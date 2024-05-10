@@ -2,47 +2,47 @@
 package main
 
 import (
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/configs"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/admin"
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/complaint"
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/storage"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/user"
+	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/routes"
 	"github.com/labstack/echo/v4"
-
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 func main() {
-	// Initialize Echo
 	e := echo.New()
 
-	// Initialize DB
-	// Konfigurasi koneksi ke database MySQL
-	// DB_USER := os.Getenv("DB_USER")
-	dsn := "root:@tcp(localhost:3306)/minpro?charset=utf8mb4&parseTime=True&loc=Local"
-
-	// Membuat koneksi ke database
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := configs.InitDB()
 	if err != nil {
-		panic("failed to connect database")
+		panic("Failed to connect database")
 	}
 
 	// Auto migrate schema
-	db.AutoMigrate(&complaint.Complaint{}, &complaint.Image{})
+	err = configs.AutoMigrate(db)
+	if err != nil {
+		panic("Failed to migrate database")
+	}
 
 	// Initialize storage
 	storage := storage.NewStorage()
 
-	// Initialize complaint module
+	// Memasangkan module complaint
 	complaintRepo := complaint.NewComplaintRepository(db)
 	complaintUC := complaint.NewComplaintUseCase(complaintRepo)
 	complaintController := complaint.NewComplaintController(complaintUC, storage)
 
-	// Routes
-	e.Static("/public", "public")
-	e.POST("/complaints", complaintController.CreateComplaint)
-	e.GET("/complaints", complaintController.GetAllComplaint)
-	e.GET("/complaints/:id", complaintController.GetComplaintByID)
-	e.PUT("/complaints/:id", complaintController.UpdateComplaint)
+	// Memasangkan module user
+	userRepo := user.NewUserRepository(db)
+	userUC := user.NewUserUseCase(userRepo)
+	userController := user.NewUserController(userUC)
 
+	//Memasangkan module admin
+	adminRepo := admin.NewAdminRepository(db)
+	adminUC := admin.NewAdminUseCase(adminRepo)
+	adminController := admin.NewAdminController(adminUC)
 	// Start server
+	routes.RegisterRoutes(e, complaintController, userController, adminController, storage)
 	e.Logger.Fatal(e.Start(":8080"))
 }
