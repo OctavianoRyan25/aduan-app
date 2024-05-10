@@ -17,6 +17,7 @@ type UseCase interface {
 	GetAllUser() ([]user.User, int, error)
 	UpdatePasswordUser(int, string) (int, error)
 	ActivateUser(int) (int, error)
+	GetAllComplaintWithPaginate(int, int) ([]complaint.Complaint, Pagination, error)
 }
 
 type adminUseCase struct {
@@ -90,4 +91,17 @@ func (uc *adminUseCase) ActivateUser(id int) (int, error) {
 	}
 	// Jika pengguna tidak ditemukan atau sudah dihapus
 	return constants.ErrorCodeBadRequest, errors.New(constants.ErrUserAlreadyDeleted)
+}
+
+func (uc *adminUseCase) GetAllComplaintWithPaginate(page, perPage int) ([]complaint.Complaint, Pagination, error) {
+	resp, err := uc.repo.GetAllComplaintWithPaginate(page, perPage)
+	if err != nil {
+		return nil, Pagination{}, err
+	}
+
+	totalCount := uc.repo.getCountOfComplaints()
+
+	pagination := NewPagination(page, perPage, totalCount)
+
+	return resp, pagination, nil
 }

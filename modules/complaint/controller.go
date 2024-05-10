@@ -157,8 +157,16 @@ func (c *ComplaintController) CreateComplaint(ctx echo.Context) error {
 		}
 		return ctx.JSON(http.StatusInternalServerError, errorResponse)
 	}
-
-	response := mapToCreateComplaintResponse(*complaint)
+	resp, errCode, err := c.UseCase.GetComplaintByID(complaint.ID, userIDInt)
+	if err != nil {
+		errorResponse := base.ErrorResponse{
+			Status:    "error",
+			ErrorCode: errCode,
+			Message:   err.Error(),
+		}
+		return ctx.JSON(errCode, errorResponse)
+	}
+	response := mapToComplaintResponse(*resp)
 
 	successResponse := base.SuccessResponse{
 		Status:  "success",

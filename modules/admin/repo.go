@@ -20,6 +20,8 @@ type Repository interface {
 	ActivateUser(int) error
 	IsActiveUser(int) (bool, error)
 	GetEmailUser(string) (*Admin, error)
+	GetAllComplaintWithPaginate(int, int) ([]complaint.Complaint, error)
+	getCountOfComplaints() int
 }
 
 type adminRepository struct {
@@ -114,4 +116,26 @@ func (r *adminRepository) GetEmailUser(email string) (*Admin, error) {
 		return nil, err
 	}
 	return &a, nil
+}
+
+func (r *adminRepository) GetAllComplaintWithPaginate(page, perPage int) ([]complaint.Complaint, error) {
+	var complaints []complaint.Complaint
+	offset := (page - 1) * perPage
+
+	if err := r.db.Preload("Images").
+		Preload("Status").
+		Preload("User").
+		Offset(offset).
+		Limit(perPage).
+		Find(&complaints).Error; err != nil {
+		return nil, err
+	}
+
+	return complaints, nil
+}
+
+func (r *adminRepository) getCountOfComplaints() int {
+	var count int64
+	r.db.Model(&complaint.Complaint{}).Count(&count)
+	return int(count)
 }
