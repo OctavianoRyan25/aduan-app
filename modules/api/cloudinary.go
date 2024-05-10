@@ -15,6 +15,7 @@ func UploadToCloudinary(file io.Reader, filename string) (string, error) {
 	apikey := os.Getenv("CLOUDINARY_API_KEY")
 	apisecreet := os.Getenv("CLOUDINARY_API_SECRET")
 	cld, err := cloudinary.NewFromParams(name, apikey, apisecreet)
+
 	if err != nil {
 		return "", err
 	}

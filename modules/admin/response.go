@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"math"
 	"time"
 
 	"github.com/OctavianoRyan25/lapor-lingkungan-hidup/modules/user"
@@ -35,4 +36,28 @@ type ImageResponse struct {
 type StatusResponse struct {
 	ID     int    `json:"id" gorm:"primaryKey"`
 	Status string `json:"status"`
+}
+
+type Pagination struct {
+	Page       int `json:"page"`
+	PerPage    int `json:"perPage"`
+	TotalCount int `json:"totalCount"`
+	TotalPages int `json:"totalPages"`
+}
+
+type SuccessResponseWithPaginate struct {
+	Status   string     `json:"status"`
+	Message  string     `json:"message"`
+	Data     any        `json:"data"`
+	MetaData Pagination `json:"metaData"`
+}
+
+func NewPagination(page, perPage, totalCount int) Pagination {
+	totalPages := int(math.Ceil(float64(totalCount) / float64(perPage)))
+	return Pagination{
+		Page:       page,
+		PerPage:    perPage,
+		TotalCount: totalCount,
+		TotalPages: totalPages,
+	}
 }

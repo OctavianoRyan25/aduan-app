@@ -26,9 +26,7 @@ type ComplaintResponse struct {
 	Body       string                    `json:"body"`
 	Category   string                    `json:"category"`
 	Images     []ImageResponse           `json:"images" `
-	StatusID   int                       `json:"status_id"`
 	Status     StatusResponse            `json:"status" gorm:"foreignKey:StatusID"`
-	UserID     int                       `json:"user_id"`
 	User       user.UserRegisterResponse `json:"user" gorm:"foreignKey:UserID"`
 	Location   string                    `json:"location"`
 	Created_at time.Time                 `json:"created_at"`

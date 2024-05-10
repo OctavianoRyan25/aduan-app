@@ -245,3 +245,42 @@ func (c *AdminController) ActivateUser(ctx echo.Context) error {
 	}
 	return ctx.JSON(constants.SuccessCode, successResponse)
 }
+
+func (c *AdminController) GetAllComplaintWithPaginate(ctx echo.Context) error {
+	role := ctx.Get("role").(string)
+	if role != "admin" {
+		errorResponse := base.ErrorResponse{
+			Status:    "error",
+			ErrorCode: constants.ErrCodeUnauthorized,
+			Message:   constants.ErrUnauthorized,
+		}
+		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
+	}
+
+	page := 1 // default page
+	if p, err := strconv.Atoi(ctx.QueryParam("page")); err == nil && p > 0 {
+		page = p
+	}
+
+	perPage := 10 // default perPage
+	// Jika Anda ingin mengizinkan pengguna untuk menentukan perPage melalui parameter query, tambahkan logika di sini
+
+	complaints, pagination, err := c.useCase.GetAllComplaintWithPaginate(page, perPage)
+	if err != nil {
+		errorResponse := base.ErrorResponse{
+			Status:    "error",
+			ErrorCode: constants.ErrCodeInternalServer,
+			Message:   err.Error(),
+		}
+		return ctx.JSON(constants.ErrCodeInternalServer, errorResponse)
+	}
+
+	successResponse := SuccessResponseWithPaginate{
+		Status:   "success",
+		Message:  "Complaints retrieved successfully",
+		Data:     complaints,
+		MetaData: pagination,
+	}
+
+	return ctx.JSON(constants.SuccessCode, successResponse)
+}

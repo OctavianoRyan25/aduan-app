@@ -33,14 +33,14 @@ func (c *UserController) RegisterUser(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "User registered successfully",
 		Data:    response,
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *UserController) LoginUser(ctx echo.Context) error {
@@ -54,7 +54,7 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 
 	// fmt.Printf("Password yang diinputkan: %s\n", user.Password)
@@ -67,7 +67,7 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 			ErrorCode: constants.ErrCodeInvalidEmailorPassword,
 			Message:   constants.ErrInvalidEmailorPassword,
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(constants.ErrCodeInvalidEmailorPassword, errorResponse)
 	}
 
 	token, err := helpers.GenerateToken(uint(resp.ID), resp.Email, "user")
@@ -85,7 +85,7 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 		Data:    token,
 	}
 
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
 
 func (c *UserController) InactiveUser(ctx echo.Context) error {
@@ -110,11 +110,11 @@ func (c *UserController) InactiveUser(ctx echo.Context) error {
 			ErrorCode: errCode,
 			Message:   err.Error(),
 		}
-		return ctx.JSON(500, errorResponse)
+		return ctx.JSON(errCode, errorResponse)
 	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "User inactive successfully",
 	}
-	return ctx.JSON(200, successResponse)
+	return ctx.JSON(constants.SuccessCode, successResponse)
 }
