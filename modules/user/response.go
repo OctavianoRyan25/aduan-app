@@ -7,3 +7,7 @@ type UserRegisterResponse struct {
 	Phone   string `json:"phone"`
 	Address string `json:"address"`
 }
+
+type UserLoginResponse struct {
+	Token string `json:"token"`
+}

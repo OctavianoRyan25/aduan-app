@@ -77,11 +77,13 @@ func (c *AdminController) LoginAdmin(ctx echo.Context) error {
 		}
 		return ctx.JSON(errCode, errorResponse)
 	}
-
+	tokenResponse := AdminLoginResponse{
+		Token: token,
+	}
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "User logged in successfully",
-		Data:    token,
+		Data:    tokenResponse,
 	}
 
 	return ctx.JSON(constants.SuccessCode, successResponse)
@@ -166,6 +168,10 @@ func (c *AdminController) GetAllUser(ctx echo.Context) error {
 		return ctx.JSON(constants.ErrCodeUnauthorized, errorResponse)
 	}
 	users, errCode, err := c.useCase.GetAllUser()
+	var usersResp []UserResponse
+	for _, user := range users {
+		usersResp = append(usersResp, MapToUserResponse(user))
+	}
 	if err != nil {
 		errorResponse := base.ErrorResponse{
 			Status:    "error",
@@ -177,7 +183,7 @@ func (c *AdminController) GetAllUser(ctx echo.Context) error {
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "Users retrieved successfully",
-		Data:    users,
+		Data:    usersResp,
 	}
 	return ctx.JSON(constants.SuccessCode, successResponse)
 }

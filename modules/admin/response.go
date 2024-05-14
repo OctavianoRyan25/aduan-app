@@ -13,6 +13,10 @@ type AdminRegisterResponse struct {
 	Email string `json:"email"`
 }
 
+type AdminLoginResponse struct {
+	Token string `json:"token"`
+}
+
 type ComplaintResponse struct {
 	ID         int                       `json:"id"`
 	Name       string                    `json:"name"`
@@ -60,4 +64,12 @@ func NewPagination(page, perPage, totalCount int) Pagination {
 		TotalCount: totalCount,
 		TotalPages: totalPages,
 	}
+}
+
+type UserResponse struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Phone   string `json:"phone"`
+	Address string `json:"address"`
 }

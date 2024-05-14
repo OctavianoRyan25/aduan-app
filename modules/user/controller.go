@@ -78,11 +78,14 @@ func (c *UserController) LoginUser(ctx echo.Context) error {
 		}
 		return ctx.JSON(500, errorResponse)
 	}
+	respToken := UserLoginResponse{
+		Token: token,
+	}
 
 	successResponse := base.SuccessResponse{
 		Status:  "success",
 		Message: "User logged in successfully",
-		Data:    token,
+		Data:    respToken,
 	}
 
 	return ctx.JSON(constants.SuccessCode, successResponse)

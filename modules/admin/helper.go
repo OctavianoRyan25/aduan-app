@@ -48,3 +48,14 @@ func mapStatusToResponse(status complaint.Status) StatusResponse {
 		Status: status.Status,
 	}
 }
+
+func MapToUserResponse(user user.User) UserResponse {
+
+	return UserResponse{
+		ID:      user.ID,
+		Name:    user.Name,
+		Email:   user.Email,
+		Phone:   user.Phone,
+		Address: user.Address,
+	}
+}
